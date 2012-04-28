@@ -1,15 +1,23 @@
 #!/usr/bin/env bash
 
+if [ "$#" -eq "0" ]
+then
+    echo "Usage: $0 <version> <test> [<test>...]"
+    exit
+fi
+
 BIN=`dirname $0`
 NEOBENCH=$BIN/..
 NEOVER=$1
-NEOTEST=$NEOBENCH/test/$2
+shift
+TESTS=$@
 NEOZIP=`ls $NEOBENCH/repo/neo4j-community-$NEOVER*-unix.tar.gz`
 
 function run {
     # pick up function params
-    COUNT=$1
-    SIZE=$2
+    TESTFILE=$1
+    COUNT=$2
+    SIZE=$3
     # create a temp dir to work in
     TEMPDIR=`mktemp -d`
     # extract the application
@@ -19,38 +27,42 @@ function run {
     # start the Neo4j server
     $NEODIR/bin/neo4j start > /dev/null 2>> error.log
     # wait for it to start completely... :-/
-    sleep 2
+    sleep 1
     # run the test
-    TIME=$( { /usr/bin/time -f "%e" python $NEOTEST $COUNT $SIZE; } 2>&1 )
+    TIME=$( { /usr/bin/time -f "%e" python $TESTFILE $COUNT $SIZE; } 2>&1 )
+    if [ $? -ne 0 ]
+    then
+        TIME='null'
+    fi
     # stop the Neo4j server
     $NEODIR/bin/neo4j stop > /dev/null 2>> error.log
     # remove the temp dir
     rm -rf $TEMPDIR
 }
 
-TOTAL=12000
-SIZES=`$BIN/factors $TOTAL`
+TOTAL=3000
+SIZES=`$BIN/factors $TOTAL | grep 0$`
 
 echo -n "\"test\""
 for SIZE in $SIZES
 do
     COUNT=$(($TOTAL / $SIZE))
-    if [ $COUNT -ge 20 ] && [ $SIZE -ge 20 ]
-    then
-        echo -n ",\"${COUNT}x${SIZE}\""
-    fi
+    echo -n ",\"${COUNT}x${SIZE}\""
 done
 echo ""
 
-echo -n "\"$2\""
-for SIZE in $SIZES
+for i in 1 2 3 4 5 6 7 8 9 10 11 12 13
 do
-    COUNT=$(($TOTAL / $SIZE))
-    if [ $COUNT -ge 20 ] && [ $SIZE -ge 20 ]
-    then
-        run $COUNT $SIZE
-        echo -n ",$TIME"
-    fi
+    for TEST in $TESTS
+    do
+        echo -n "\"$TEST\""
+        for SIZE in $SIZES
+        do
+            COUNT=$(($TOTAL / $SIZE))
+            run $NEOBENCH/test/$TEST $COUNT $SIZE
+            echo -n ",$TIME"
+        done
+        echo ""
+    done
 done
-echo ""
 

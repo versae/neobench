@@ -1,9 +1,46 @@
 = Neo4j Benchmarking Tool
 
-Usage: neobench <version> <test>
+Usage: neobench <version> <test> [<test>...]
 
 Example:
 {{{
-$ bin/neobench 1.8 batch-create
+$ bin/neobench 1.8 batch-create cypher-create
+}}}
+
+== Details
+
+The {{{neobench}}} script outputs a CSV file containing one row per test. Each
+test is executed a number of times with varying criteria as defined by the
+corresponding column header. For each execution, a new database instance will
+be created to ensure a fair test.
+
+For example, a header labelled "60x100" indicates that 60 blocks of 100 will be
+submitted. Within the context of "batch-create" this would indicate that 60
+batches would be submitted, each containing 100 node creation requests. For
+"cypher-create", 60 queries would be executed, each creating 100 nodes.
+
+The individual values merely hold the number of seconds that the test took to
+execute. A value of "null" indicates that the test failed - often this will be
+the result of a timeout.
+
+== Sample Results
+
+The results below represent a comparison between batch insertion and Cypher
+insertion for 3000 nodes. It can be seen that batch insertion is typically
+faster than Cypher insertion and that the optimum batch size is somewhere
+around 200 nodes per batch.
+
+{{{
+"test","300x10","150x20","100x30","75x40","60x50","50x60","30x100","25x120","20x150","15x200","12x250","10x300","6x500","5x600","4x750","3x1000","2x1500","1x3000"
+"batch-create",20.61,9.72,7.15,6.07,5.49,4.80,2.99,2.69,2.33,2.17,1.65,2.21,2.10,2.31,3.14,3.19,4.26,8.01
+"cypher-create",18.19,9.06,6.36,7.63,6.46,5.45,4.56,3.84,3.73,3.81,3.69,3.87,5.17,5.03,6.16,7.36,9.85,18.81
+"batch-create",17.29,9.37,6.77,5.97,5.58,4.19,2.90,2.50,2.25,1.94,1.71,1.59,2.35,2.21,3.09,2.89,4.00,6.93
+"cypher-create",19.19,8.88,6.15,7.89,6.43,5.55,4.12,3.90,3.46,3.30,3.49,3.56,4.31,4.89,5.52,6.72,9.27,18.78
+"batch-create",16.69,9.53,6.79,5.75,5.39,4.32,2.90,2.68,2.23,2.05,1.66,1.60,1.93,2.01,2.29,3.39,3.87,6.95
+"cypher-create",18.46,9.10,5.96,7.54,6.35,5.65,4.07,3.82,3.61,3.51,3.77,3.56,4.38,4.80,5.66,6.89,9.24,18.55
+"batch-create",17.75,9.30,7.10,5.59,4.92,4.19,2.97,2.55,2.22,1.99,1.68,1.59,2.05,2.16,2.31,2.92,3.75,7.31
+"cypher-create",17.94,9.24,6.05,7.42,6.44,5.56,4.13,3.76,3.62,3.49,3.63,3.67,4.40,4.82,5.52,6.68,9.15,18.46
+"batch-create",16.74,9.41,6.81,5.64,4.88,4.30,2.93,2.87,2.23,1.83,1.46,1.49,1.83,2.26,2.40,3.47,3.77,6.88
+"cypher-create",18.34,9.20,6.13,7.54,6.42,5.54,4.02,3.81,3.85,3.57,3.45,3.76,4.39,4.82,5.51,6.84,9.26,18.56
 }}}
 
