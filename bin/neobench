@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+
+BIN=`dirname $0`
+NEOBENCH=$BIN/..
+NEOVER=$1
+NEOTEST=$NEOBENCH/test/$2
+NEOZIP=`ls $NEOBENCH/repo/neo4j-community-$NEOVER*-unix.tar.gz`
+
+function run {
+    # pick up function params
+    COUNT=$1
+    SIZE=$2
+    # create a temp dir to work in
+    TEMPDIR=`mktemp -d`
+    # extract the application
+    tar -x -z -C $TEMPDIR -f $NEOZIP
+    # establish the Neo4j application dir
+    NEODIR=$TEMPDIR/`ls $TEMPDIR`
+    # start the Neo4j server
+    $NEODIR/bin/neo4j start > /dev/null 2>> error.log
+    # wait for it to start completely... :-/
+    sleep 2
+    # run the test
+    TIME=$( { /usr/bin/time -f "%e" python $NEOTEST $COUNT $SIZE; } 2>&1 )
+    # stop the Neo4j server
+    $NEODIR/bin/neo4j stop > /dev/null 2>> error.log
+    # remove the temp dir
+    rm -rf $TEMPDIR
+}
+
+TOTAL=12000
+SIZES=`$BIN/factors $TOTAL`
+
+echo -n "\"test\""
+for SIZE in $SIZES
+do
+    COUNT=$(($TOTAL / $SIZE))
+    if [ $COUNT -ge 20 ] && [ $SIZE -ge 20 ]
+    then
+        echo -n ",\"${COUNT}x${SIZE}\""
+    fi
+done
+echo ""
+
+echo -n "\"$2\""
+for SIZE in $SIZES
+do
+    COUNT=$(($TOTAL / $SIZE))
+    if [ $COUNT -ge 20 ] && [ $SIZE -ge 20 ]
+    then
+        run $COUNT $SIZE
+        echo -n ",$TIME"
+    fi
+done
+echo ""
+

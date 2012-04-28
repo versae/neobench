@@ -1,0 +1,9 @@
+= Neo4j Benchmarking Tool
+
+Usage: neobench <version> <test>
+
+Example:
+{{{
+$ bin/neobench 1.8 batch-create
+}}}
+
